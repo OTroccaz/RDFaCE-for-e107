@@ -480,7 +480,7 @@ class e_parse extends e_parser
 	/**
 	 * Converts the supplied text (presumed to be from user input) to a format suitable for storing in a database table.
 	 *
-	 * @param string $data
+	 * @param mixed $data
 	 * @param boolean $nostrip [optional] Assumes all data is GPC ($_GET, $_POST, $_COOKIE) unless indicate otherwise by setting this var to TRUE.
 	 * 				If magic quotes is enabled on the server and you do not tell toDB() that the data is non GPC then slashes will be stripped when they should not be.
 	 * @param boolean $no_encode [optional] This parameter should nearly always be FALSE. It is used by the save_prefs() function to preserve HTML content within prefs even when
@@ -1423,12 +1423,17 @@ class e_parse extends e_parser
 	 * @param bool $opts['ext'] load link in new window (not for email)
 	 * @return string
 	 */
-	private function makeClickable($text='', $type='email', $opts=array())
+	public function makeClickable($text='', $type='email', $opts=array())
 	{
 
 		if(empty($text))
 		{
 			return '';
+		}
+		
+		if(strpos($text, "http://schema.org/"))
+		{
+			return $text;
 		}
 
 		$textReplace = (!empty($opts['sub'])) ? $opts['sub'] : '';
@@ -2385,6 +2390,32 @@ class e_parse extends e_parser
 	}
 
 
+	/**
+	 * Convert a string to a number (int/float)
+	 *
+	 * @param string $value
+	 * @return int|float
+	 */
+	function toNumber($value) 
+	{
+		// adapted from: https://secure.php.net/manual/en/function.floatval.php#114486
+		$dotPos = strrpos($value, '.');
+		$commaPos = strrpos($value, ',');
+		$sep = (($dotPos > $commaPos) && $dotPos) ? $dotPos :
+			((($commaPos > $dotPos) && $commaPos) ? $commaPos : false);
+	  
+		if (!$sep) {
+			return preg_replace("/[^-0-9]/", "", $value);
+		}
+	
+		return (
+			preg_replace("/[^-0-9]/", "", substr($value, 0, $sep)) . '.' .
+			preg_replace("/[^0-9]/", "", substr($value, $sep+1, strlen($value)))
+		);
+	}
+
+
+	
 	/**
 	 * Clean and Encode Ampersands '&' for output to browser.
 	 * @param string $text
@@ -3711,7 +3742,7 @@ class e_parser
     protected $allowedAttributes  = array(
                                     'default'   => array('id', 'style', 'class'),
                                     'img'       => array('id', 'src', 'style', 'class', 'alt', 'title', 'width', 'height'),
-                                    'a'         => array('id', 'href', 'style', 'class', 'title', 'target'),
+                                    'a'         => array('id', 'href', 'style', 'class', 'title', 'target', 'about', 'typeof'),
                                     'script'	=> array('type', 'src', 'language', 'async'),
                                     'iframe'	=> array('id', 'src', 'frameborder', 'class', 'width', 'height', 'style'),
 	                                'input'     => array('type','name','value','class','style'),
@@ -3723,6 +3754,9 @@ class e_parser
 	                                'col'       => array('id', 'span', 'class','style'),
 		                            'embed'     => array('id', 'src', 'style', 'class', 'wmode', 'type', 'title', 'width', 'height'),
 									'x-bbcode'  => array('alt'),
+									'div'   => array('id', 'style', 'class', 'prefix'),
+									'span'   => array('id', 'style', 'class', 'typeof', 'data-mce-style', 'property', 'resource', 'itemscope', 'itemid', 'itemtype', 'itemprop'),
+									'meta'   => array('property', 'content')
                                   );
 
     protected $badAttrValues     = array('javascript[\s]*?:','alert\(','vbscript[\s]*?:','data:text\/html', 'mhtml[\s]*?:', 'data:[\s]*?image');
@@ -3734,7 +3768,7 @@ class e_parser
     protected $allowedTags        = array('html', 'body','div','a','img','table','tr', 'td', 'th', 'tbody', 'thead', 'colgroup', 'b',
                                         'i', 'pre','code', 'strong', 'u', 'em','ul', 'ol', 'li','img','h1','h2','h3','h4','h5','h6','p',
                                         'div','pre','section','article', 'blockquote','hgroup','aside','figure','figcaption', 'abbr','span', 'audio', 'video', 'br',
-                                        'small', 'caption', 'noscript', 'hr', 'section', 'iframe', 'sub', 'sup', 'cite', 'x-bbcode'
+                                        'small', 'caption', 'noscript', 'hr', 'section', 'iframe', 'sub', 'sup', 'cite', 'x-bbcode', 'meta'
                                    );
     protected $scriptTags 		= array('script','applet','form','input','button', 'embed', 'object', 'ins', 'select','textarea'); //allowed when $pref['post_script'] is enabled.
 	
@@ -4634,7 +4668,7 @@ class e_parser
 			$ytpref['cc_lang_pref'] = e_LAN; // switch captions with chosen user language.
 		}
 
-		$ytqry = http_build_query($ytpref);
+		$ytqry = http_build_query($ytpref, null, '&amp;');
 
 		$defClass = (deftrue('BOOTSTRAP')) ? "embed-responsive embed-responsive-16by9" : "video-responsive"; // levacy backup.
 
@@ -4740,13 +4774,17 @@ class e_parser
 	 * Includes support for 'livestamp' (http://mattbradley.github.io/livestampjs/)
 	 * @param integer $datestamp - unix timestamp
 	 * @param string $format - short | long | relative 
-	 * @return HTML with converted date. 
+	 * @return string converted date (html)
 	 */
 	public function toDate($datestamp = null, $format='short')
 	{
 		if(!is_numeric($datestamp)){ return null; }
 
-		return '<span data-livestamp="'.$datestamp.'">'.e107::getDate()->convert($datestamp, $format).'</span>';	
+		$value = e107::getDate()->convert_date($datestamp, $format);
+
+		$inc = ($format === 'relative') ? ' data-livestamp="'.$datestamp.'"' : '';
+
+		return '<span'.$inc.'>'.$value.'</span>';
 	}
 	
 

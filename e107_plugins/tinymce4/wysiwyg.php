@@ -240,7 +240,7 @@ class wysiwyg
 			'Danish'        => 'da',
 			// 'Divehi' => 'dv',
 			'Dutch'         => 'nl',
-			'English'       => 'en', // Default language file.
+			'English'       => 'en_GB', // Default language file.
 			// 'English (Canada)' => 'en_CA',
 			// 'English (United Kingdom)' => 'en_GB',
 			'Esperanto'     => 'eo',
@@ -855,7 +855,8 @@ class wysiwyg
 			1 => $pathFA . '/css/font-awesome.min.css',
 			2 => e_PLUGIN_ABS . 'tinymce4/editor.css',
 			3 => $pathAn . 'animate.min.css',
-
+			4 => e_PLUGIN_ABS . 'tinymce4/plugins/rdface/css/rdface.css',
+			5 => e_PLUGIN_ABS . 'tinymce4/plugins/rdface/css/schema_colors.css'
 		);
 
 		$editorCSS = $tp->replaceConstants($editorCSS, 'abs');
@@ -866,7 +867,11 @@ class wysiwyg
 		$ret['preformatted']			= true;
 		$ret['document_base_url']		= SITEURL;
 		$ret['schema']                  = "html5";
-		$ret['element_format']          = "html";
+		$ret['element_format']          = "xhtml";
+		$ret['cleanup']							= false;
+    $ret['valid_elements'] = '+*[*]';
+		$ret['extended_valid_elements'] = 'i[*],object[*],embed[*],bbcode[*],div[*],span[*],meta[*]';
+		$ret['valid_children'] = '+body[meta|div|p|span],+div[h2|span|meta|object|p],+object[param|embed],+p[span|meta],+span[meta]';
 
 	//	$ret['table_default_attributes'] = json_encode(array('class'=>'table table-striped' ));
 
