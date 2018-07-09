@@ -176,15 +176,19 @@ function mapEventRegistryOutputToStandard(txt, proxy_url, recEntities,
           if (val['type'] == "person") {GType = "Person";}
           tmp += "Schema:"+GType+':Schema,';
         }
-        //console.log(val['dbPediaTypes']);
-        val['dbPediaTypes'].forEach(function(element) {
-          tmp += "Schema:"+element+':dbPedia,';
-        });
-        val['wikiDataClasses'].forEach(function(elmt) {
-          Object.keys(elmt).map(function(objectKey, index) {
-            tmp += "Schema:"+elmt['enLabel']+':wikiData,';
+        if (typeof val['dbPediaTypes'] !== 'undefined') {
+          //console.log(val['dbPediaTypes']);
+          val['dbPediaTypes'].forEach(function(element) {
+            tmp += "Schema:"+element+':dbPedia,';
           });
-        });   
+        }
+        if (typeof val['wikiDataClasses'] !== 'undefined') {
+          val['wikiDataClasses'].forEach(function(elmt) {
+            Object.keys(elmt).map(function(objectKey, index) {
+              tmp += "Schema:"+elmt['enLabel']+':wikiData,';
+            });
+          });   
+        }
         //console.log(tmp);
         var detectedTypes = getPrefixTypeFromList('schema', tmp);
         if (detectedTypes.length) {
