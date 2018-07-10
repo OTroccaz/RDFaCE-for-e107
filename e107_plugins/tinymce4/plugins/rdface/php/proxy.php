@@ -1,12 +1,11 @@
 <?php
 $api = $_POST['api'];
 $confidence = $_POST['confidence'];
-$language = $_POST['language'];
 if(!$api){die("You must specify an API name!");}
 $request_body = stripslashes($_POST['query']);
 $additionals=null;
 if($api == "DBpedia"){
-  $url = "http://api.dbpedia-spotlight.org/".$language."/annotate";
+  $url = "http://api.dbpedia-spotlight.org/fr/annotate";
   $request = "text=".urlencode($request_body)."&confidence=".$_POST['confidence']."&support=20";
   $additionals = array(
     CURLOPT_HTTPHEADER => array("Content-Type:application/x-www-form-urlencoded", "Accept: application/json"),
@@ -17,7 +16,7 @@ if($api == "DBpedia"){
 }elseif($api == "MeaningCloud"){
 	$token = "";
 	$url = "https://api.meaningcloud.com/topics-2.0";
-	$input =  http_build_query(array("txt" => $request_body, "key" => $token, "lang" => $language, "ilang" => $language, "tt" => "ectmnoqra"));
+	$input =  http_build_query(array("txt" => $request_body, "key" => $token, "lang" => "fr", "ilang" => "fr", "tt" => "ectmnoqra"));
 	$additionals=array(
     CURLOPT_HTTPHEADER => array("content-type:application/x-www-form-urlencoded", "outputFormat:application/json"),
     CURLOPT_POST => 1,
@@ -41,7 +40,7 @@ if($api == "DBpedia"){
 	$url="https://api.dandelion.eu/datatxt/nex/v1/?";
 	$parm = "min_confidence=".$confidence."&text=";
   $parm .= urlencode($request_body);
-  $parm .= "&country=-1&lang=".$language."&social=False&top_entities=8&include=image%2Cabstract%2Ctypes%2Ccategories%2Clod";
+  $parm .= "&country=-1&social=False&top_entities=8&include=image%2Cabstract%2Ctypes%2Ccategories%2Clod";
   $url .= $parm.$token;
 	$additionals = array(
     CURLOPT_RETURNTRANSFER => 1,

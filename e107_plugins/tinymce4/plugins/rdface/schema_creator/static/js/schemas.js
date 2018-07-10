@@ -96,6 +96,7 @@ function create_form(schema,property,container){
 		tmp=tmp+'<div class="controls">';
 		tmp=tmp+'<input type="text" id="entity_uri" placeholder="URI of the entity">';
 		tmp=tmp+'<span class="add-on subschema-icon" onclick="form_suggestURI()" title="Search for URI"><i class="icon-search"></i></span>';
+		tmp=tmp+'<span class="add-on subschema-icon" onclick="form_consistURI()" title="Verify URI consistency"><i class="icon-globe"></i></span></a>';
 		tmp=tmp+'</div>';
 		tmp=tmp+'</div>';
 		$('#form_'+id).append(tmp);
@@ -224,6 +225,10 @@ function form_suggestURI(){
 		alert('Please type a keyword to search');
 	}
 	
+}
+function form_consistURI(){
+	var term=$('#entity_uri').val().trim();
+	window.open(term,'_blank');
 }
 function add_sub_schema(s,range){
 	if(!$('#tab_'+s).length){
