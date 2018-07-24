@@ -487,7 +487,7 @@ class e_parse extends e_parser
 	 * 				the save_prefs() function has been called by a non admin user / user without html posting permissions.
 	 * @param boolean|string $mod [optional] model = admin-ui usage. The 'no_html' and 'no_php' modifiers blanket prevent HTML and PHP posting regardless of posting permissions. (used in logging)
 	 *		The 'pReFs' value is for internal use only, when saving prefs, to prevent sanitisation of HTML.
-	 * @param boolean $original_author [optional]
+	 * @param mixed $parm [optional]
 	 * @return string
 	 * @todo complete the documentation of this essential method
 	 */
@@ -1431,7 +1431,7 @@ class e_parse extends e_parser
 			return '';
 		}
 		
-		if(strpos($text, "http://schema.org/"))
+		if(strpos($text, "://schema.org/"))
 		{
 			return $text;
 		}
@@ -4632,6 +4632,29 @@ class e_parser
 		return ($ext === 'jpg' || $ext === 'png' || $ext === 'gif' || $ext === 'jpeg') ? true : false;
 	}
 
+
+	/**
+	 * @param $file
+	 * @param array $parm
+	 * @return string
+	 */
+	public function toAudio($file, $parm=array())
+	{
+
+		$file = $this->replaceConstants($file, 'abs');
+
+		$mime = varset($parm['mime'], 'audio/mpeg');
+
+		$text = '<audio controls style="max-width:100%">
+					<source src="'.$file.'" type="'.$mime .'">
+					  Your browser does not support the audio tag.
+				</audio>';
+
+		return $text;
+
+	}
+
+
 	
 	/**
 	 * Display a Video file. 
@@ -4645,9 +4668,11 @@ class e_parser
 			return false;
 		}
 
-		list($id,$type) = explode(".",$file,2);
+		$type = pathinfo($file, PATHINFO_EXTENSION);
 
 		$thumb = vartrue($parm['thumb']);
+		$mode = varset($parm['mode'],false); // tag, url
+
 
 
 		$pref = e107::getPref();
@@ -4678,6 +4703,13 @@ class e_parser
 		//	$thumbSrc = "https://i1.ytimg.com/vi/".$id."/0.jpg";
 			$thumbSrc = "https://i1.ytimg.com/vi/".$id."/mqdefault.jpg";
 			$video =  '<iframe class="embed-responsive-item" width="560" height="315" src="//www.youtube.com/embed/'.$id.'?'.$ytqry.'" style="background-size: 100%;background-image: url('.$thumbSrc.');border:0px" allowfullscreen></iframe>';
+			$url 	= 'http://youtu.be/'.$id;
+
+
+			if($mode === 'url')
+			{
+				return $url;
+			}
 
 		
 			if($thumb === 'tag')
@@ -4690,7 +4722,7 @@ class e_parser
 				$thumbSrc = "http://i1.ytimg.com/vi/".$id."/maxresdefault.jpg"; // 640 x 480
 				$filename = 'temp/yt-thumb-'.md5($id).".jpg";
 				$filepath = e_MEDIA.$filename;
-				$url 	= 'http://youtu.be/'.$id;
+
 				
 				if(!file_exists($filepath))
 				{
@@ -4750,12 +4782,24 @@ class e_parser
 			return '<div class="'.$defClass.' '.vartrue($parm['class']).'">'.$video.'</div>';
 		}
 				
-		if($type === 'mp4') //TODO FIXME
+		if($type === 'mp4')
 		{
+			$file = $this->replaceConstants($file, 'abs');
+
+			if($mode === 'url')
+			{
+				return $file;
+			}
+
+
+			$width = varset($parm['w'], 320);
+			$height = varset($parm['h'], 240);
+			$mime = varset($parm['mime'], 'video/mp4');
+
 			return '
 			<div class="video-responsive">
-			<video width="320" height="240" controls>
-			  <source src="'.$file.'" type="video/mp4">
+			<video width="'.$width.'" height="'.$height.'" controls>
+			  <source src="'.$file.'" type="'.$mime.'">
 		
 			  Your browser does not support the video tag.
 			</video>
