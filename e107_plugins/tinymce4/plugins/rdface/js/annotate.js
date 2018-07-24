@@ -27,12 +27,104 @@ function getPrefixTypeFromList(prefix, types) {
 	}
 	return output;
 }
+function strpos (haystack, needle, offset) {
+  var i = (haystack + '')
+    .indexOf(needle, (offset || 0))
+  return i === -1 ? false : i
+}
+function replaceAll(recherche, remplacement, chaineAModifier) {
+  return chaineAModifier.split(recherche).join(remplacement);
+}
+function decodeHtml(html) {
+  var txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  return txt.value;
+}
+function codeTag(str) {
+  var txtE = str.replace(/<br\s*[\/]?>/gi, "RetChar");
+  var txtR = txtE.replace("[html]", "");
+  var txtR = txtR.replace("[/html]", "");
+  var txtR = decodeHtml(txtR);
+ 	var tabCodes = new Array();
+ 	var res = new Array();
+  var txtR = txtR.replace(/\n|\r|(\n\r)/g,"");
+  //Where are HTML tags?
+  var aMem = ['<body', '<div', '<a', '<img', '[img', '<table', '<tr', '<td', '<th', '<tbody', '<thead', '<colgroup', '<b',
+              '<i', '<pre','<code', '<strong', '<u', '<em','<ul', '<ol', '<li', '<h1', '<h2', '<h3', '<h4', '<h5', '<h6', '<p',
+              '<div', '<pre', '<section', '<article', '<blockquote', '<hgroup', '<aside', '<figure', '<figcaption', '<abbr', '<span', '<audio', '<video',
+              '<small', '<big', '<caption', '<noscript', '<hr', '<section', '<iframe', '<sub', '<sup', '<cite', '<x-bbcode', '<meta'
+              ];
+  for(var i=0; i<aMem.length; i++) {
+    var iCpt = 0;
+    while (strpos(txtR, aMem[i], iCpt) !== false) {
+      var tabCode = new Array();
+      tabCode["posI"] = strpos(txtR, aMem[i], iCpt);
+      iCpt = tabCode["posI"];
+      var codeItmp = aMem[i];
+      var posIF = "";
+      aMem[i].substr(0, 1) == "<" ? posIF = strpos(txtR, ">", tabCode["posI"]) + 1 : posIF = strpos(txtR, "]", tabCode["posI"]) + 1;
+      tabCode["codeI"] = txtR.substr(tabCode["posI"], posIF - tabCode["posI"]);
+      var codeFtmp = aMem[i].trim().replace(aMem[i].substr(0, 1), aMem[i].trim().substr(0, 1)+'/');
+      aMem[i].substr(0, 1) == "<" ? tabCode["codeF"] = codeFtmp + ">" : tabCode["codeF"] = codeFtmp + "]";
+      var posFtmp = strpos(txtR, aMem[i].replace(aMem[i].substr(0, 1), aMem[i].substr(0, 1)+'/'), iCpt);
+      tabCode["posF"] = posFtmp  + tabCode["codeF"].length; 
+      tabCode["code"] = txtR.substr(tabCode["posI"], tabCode["posF"] - tabCode["posI"]);
+      tabCodes.push(tabCode);
+      iCpt = tabCode["posF"];
+    }
+  }
+  function clasPos(a, b) {
+    return a.posI > b.posI;
+  }
+  tabCodes.sort(clasPos);
+  //console.log(tabCodes);
+
+  //Replace each tags characters, including < and >, by a space
+  var txtT = txtR.split("");
+  for(var i=0; i<tabCodes.length; i++) {
+    //specific cases for <figure></figure> or [img][/img] >>> replace all characters inside opening and closing tags to preserve the picture
+    if (tabCodes[i]["codeF"] == "</figure>") {
+      var cptI = tabCodes[i]["posI"];
+      var cptF = tabCodes[i]["posF"];
+      for(var j=cptI; j<cptF; j++) {
+        txtT[cptI] = "_";
+        cptI++;
+      }
+    }
+    if (tabCodes[i]["codeF"] == "[/img]") {
+      var cptI = tabCodes[i]["posI"];
+      var cptF = tabCodes[i]["posF"];
+      for(var j=cptI; j<cptF; j++) {
+        txtT[cptI] = "_";
+        cptI++;
+      }
+    }
+    //other tags
+    var lgCodeI = tabCodes[i]["codeI"].length;
+    var cptI = tabCodes[i]["posI"];
+    for(var j=1; j<=lgCodeI; j++) {
+      txtT[cptI] = "_";
+      cptI++;
+    }
+    var lgCodeF = tabCodes[i]["codeF"].length;
+    var cptF = tabCodes[i]["posF"] - lgCodeF;
+    for(var j=1; j<=lgCodeF; j++) {
+      txtT[cptF] = "_";
+      cptF++;
+    }
+  }
+  txtR = txtT.join("");
+  
+  return {txtR, tabCodes};
+}
 function mapDBpediaOutputToStandard(txt, proxy_url, recEntities,
-		recEntitiesLevels) {
+	recEntitiesLevels) {
 	var dataReceived;
-  var txtE = txt.replace(/<br\s*[\/]?>/gi, "RetChar");
-	var dataEnc = encodeURIComponent($(txtE).text());
-	//console.log(data);
+	var resTab = codeTag(txt);
+	var txtR = resTab["txtR"];
+	var dataEnc = encodeURIComponent(txtR);
+	//var dataEnc = encodeURIComponent($(txtE).text());
+	//console.log(txtR);
 	if (!$.cookie("confidence")) {
 		data = "api=DBpedia&confidence=0.50";
 	} else {
@@ -52,12 +144,14 @@ function mapDBpediaOutputToStandard(txt, proxy_url, recEntities,
     $.each(dataReceived['Resources'], function(key, val) {
       // verification that the entity or part of the entity is not already defined
       var exist = false;
-      var tst = $(txtE).text().substring(parseInt(val['@offset']), (parseInt(val['@offset']) + val['@surfaceForm'].length));
+      //var tst = $(txtR).text().substring(parseInt(val['@offset']), (parseInt(val['@offset']) + val['@surfaceForm'].length));
+      var tst = txtR.substring(parseInt(val['@offset']), (parseInt(val['@offset']) + val['@surfaceForm'].length));
       if (entities.length) {
         for (e = 0; e < entities.length; e++) {
           //if (entities[e]['exact'] == $(txtE).text().substring(parseInt(val['@offset']), (parseInt(val['@offset']) + val['@surfaceForm'].length))) {exist = true; break;}
           var def = entities[e]['exact'];
-          tst = $(txtE).text().substring(parseInt(val['@offset']), (parseInt(val['@offset']) + val['@surfaceForm'].length));
+          //tst = $(txtR).text().substring(parseInt(val['@offset']), (parseInt(val['@offset']) + val['@surfaceForm'].length));
+          tst = txtR.substring(parseInt(val['@offset']), (parseInt(val['@offset']) + val['@surfaceForm'].length));
           //console.log(tst);
           if ((def.indexOf(tst) != -1) || (tst.indexOf(def) != -1)) {exist = true; break;}
         }
@@ -119,7 +213,7 @@ function mapDBpediaOutputToStandard(txt, proxy_url, recEntities,
           entity["end"] = parseInt(val['@offset'])
               + val['@surfaceForm'].length;
           entity["length"] = parseInt(entity["end"] - entity["start"]);
-          entity["exact"] = $(txtE).text().substring(entity["start"], entity["end"]);
+          entity["exact"] = txtR.substring(entity["start"], entity["end"]);
           if (entity["type"]) {
             entities.push(entity);
           }
@@ -130,12 +224,15 @@ function mapDBpediaOutputToStandard(txt, proxy_url, recEntities,
   }
 	return entities;
 }
+//console.log(entities);
 function mapEventRegistryOutputToStandard(txt, proxy_url, recEntities,
 		recEntitiesLevels) {
   //console.log(txt);
 	var dataReceived;
-  var txtE = txt.replace(/<br\s*[\/]?>/gi, "RetChar");
-	var dataEnc = encodeURIComponent($(txtE).text());
+  var resTab = codeTag(txt);
+	var txtR = resTab["txtR"];
+	var dataEnc = encodeURIComponent(txtR);
+	//var dataEnc = encodeURIComponent($(txtE).text());
 	//console.log(data);
 	if (!$.cookie("confidence")) {
 		data = "api=EventRegistry&confidence=0.50";
@@ -239,8 +336,10 @@ function mapEventRegistryOutputToStandard(txt, proxy_url, recEntities,
 function mapMeaningCloudOutputToStandard(txt, proxy_url, recEntities,
 		recEntitiesLevels) {
 	var dataReceived;
-	var txtE = txt.replace(/<br\s*[\/]?>/gi, "RetChar");
-	var dataEnc = encodeURIComponent($(txtE).text());
+	var resTab = codeTag(txt);
+	var txtR = resTab["txtR"];
+	var dataEnc = encodeURIComponent(txtR);
+	//var dataEnc = encodeURIComponent($(txtE).text());
 	//console.log(data);
 	if (!$.cookie("confidence")) {
 		data = "api=MeaningCloud&confidence=0.50";
@@ -310,9 +409,11 @@ function mapMeaningCloudOutputToStandard(txt, proxy_url, recEntities,
 function mapDandelionOutputToStandard(txt, proxy_url, recEntities,
 		recEntitiesLevels) {
 	var dataReceived;
-	var txtE = txt.replace(/<br\s*[\/]?>/gi, "RetChar");
+	var resTab = codeTag(txt);
+	var txtR = resTab["txtR"];
+	var dataEnc = encodeURIComponent(txtR);
 	var dataE = data;
-	var dataEnc = encodeURIComponent($(txtE).text());
+	//var dataEnc = encodeURIComponent($(txtE).text());
 	//console.log(data);
 	if (!$.cookie("confidence")) {
 		data = "api=Dandelion&confidence=0.50";
@@ -443,9 +544,9 @@ function enrichText(entities, editor) {
 	// -----------------------------
 	var output = new Array();
 	var enriched_text_p = editor.getContent();
-  var txtE = enriched_text_p.replace(/<br\s*[\/]?>/gi, "RetChar");
-	var enriched_text = $(txtE).text();
-	//console.log('Toto : '+enriched_text);
+	var resTab = codeTag(enriched_text_p);
+	var enriched_text = resTab["txtR"];
+	var tabCodes = resTab["tabCodes"];
 	var extra_triples = '';
 	// prepare positioning functions
 	var sortArr = new Array();
@@ -517,10 +618,70 @@ function enrichText(entities, editor) {
 			enriched_text = enriched_text.substring(0, start)
 					+ annotatedContent
 					+ enriched_text.substring(end, enriched_text.length + 1);
+			
+      var decal = annotatedContent.length - selectedContent.length;
+      //console.log(decal + ' - ' + annotatedContent + ' - ' + selectedContent);
+      
+      //echo the annotated content offset on the positions of the HTML tags
+      for(var i=0; i<tabCodes.length; i++) {
+        start < tabCodes[i]["posI"] ? tabCodes[i]["posI"] += decal : '';
+        start < tabCodes[i]["posF"] ? tabCodes[i]["posF"] += decal : '';
+      }
 		}
 	});
 	//console.log(enriched_text);
+  //console.log(tabRC);
+  //console.log(tabCodes);		
+
   var txtD = enriched_text.replace(/RetChar/g, "<br />");
+
+  //Restore each tags codes
+  var txtT = txtD.split("");
+  for(var i=0; i<tabCodes.length; i++) {
+    //specific case for <figure></figure> or [img][/img]
+    if (tabCodes[i]["codeF"] == "</figure>") {
+      var cptI = tabCodes[i]["posI"];
+      var cptF = tabCodes[i]["posF"];
+      var k = 0;
+      for(var j=cptI; j<cptF; j++) {
+        txtT[cptI] = tabCodes[i]["code"].substr(k, 1);
+        cptI++;
+        k++;
+      }
+    }
+    if (tabCodes[i]["codeF"] == "[/img]") {
+      var cptI = tabCodes[i]["posI"];
+      var cptF = tabCodes[i]["posF"];
+      var k = 0;
+      for(var j=cptI; j<cptF; j++) {
+        txtT[cptI] = tabCodes[i]["code"].substr(k, 1);
+        cptI++;
+        k++;
+      }
+    }
+    
+    //other tags
+    var lgCodeI = tabCodes[i]["codeI"].length;
+    var cptI = tabCodes[i]["posI"];
+    var k = 0;
+    for(var j=1; j<=lgCodeI; j++) {
+      txtT[cptI] = tabCodes[i]["codeI"].substr(k, 1);;
+      cptI++;
+      k++;
+    }
+
+    var lgCodeF = tabCodes[i]["codeF"].length;
+    var cptF = tabCodes[i]["posF"] - lgCodeF;
+    var k = 0;
+    for(var j=1; j<=lgCodeF; j++) {
+      txtT[cptF] = tabCodes[i]["codeF"].substr(k, 1);;
+      cptF++;
+      k++;
+    }    
+  }
+  txtD = txtT.join("");
+  //console.log(txtD);
+  
 	return txtD;
 }
 var Annotate = {
@@ -562,7 +723,6 @@ var Annotate = {
 		//DBpedia
 		var entities = mapDBpediaOutputToStandard(txt,
 				proxy_url, recEntities, recEntitiesLevels);
-		
 		
 		//EventRegistry
 		var entities = mapEventRegistryOutputToStandard(txt,
