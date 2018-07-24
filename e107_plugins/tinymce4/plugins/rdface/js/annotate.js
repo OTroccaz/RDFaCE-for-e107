@@ -41,10 +41,11 @@ function decodeHtml(html) {
   return txt.value;
 }
 function codeTag(str) {
-  var txtE = str.replace(/<br\s*[\/]?>/gi, "RetChar");
+  var txtE = str.replace(/<br\s*[\/]?>/gi, "RetCha");
   var txtR = txtE.replace("[html]", "");
   var txtR = txtR.replace("[/html]", "");
   var txtR = decodeHtml(txtR);
+  //console.log(txtR);
  	var tabCodes = new Array();
  	var res = new Array();
   var txtR = txtR.replace(/\n|\r|(\n\r)/g,"");
@@ -546,6 +547,7 @@ function enrichText(entities, editor) {
 	var enriched_text_p = editor.getContent();
 	var resTab = codeTag(enriched_text_p);
 	var enriched_text = resTab["txtR"];
+	//console.log(enriched_text);
 	var tabCodes = resTab["tabCodes"];
 	var extra_triples = '';
 	// prepare positioning functions
@@ -630,10 +632,9 @@ function enrichText(entities, editor) {
 		}
 	});
 	//console.log(enriched_text);
-  //console.log(tabRC);
   //console.log(tabCodes);		
 
-  var txtD = enriched_text.replace(/RetChar/g, "<br />");
+  var txtD = enriched_text.replace(/RetCha/g, "<br />");
 
   //Restore each tags codes
   var txtT = txtD.split("");
