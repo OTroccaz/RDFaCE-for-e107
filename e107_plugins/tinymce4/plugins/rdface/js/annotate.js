@@ -414,7 +414,6 @@ function mapDandelionOutputToStandard(txt, proxy_url, recEntities,
 	var resTab = codeTag(txt);
 	var txtR = resTab["txtR"];
 	var dataEnc = encodeURIComponent(txtR);
-	var dataE = data;
 	//var dataEnc = encodeURIComponent($(txtE).text());
 	//console.log(data);
 	if (!$.cookie("confidence")) {
@@ -435,12 +434,6 @@ function mapDandelionOutputToStandard(txt, proxy_url, recEntities,
   if (typeof dataReceived['annotations'] !== 'undefined') {
     $.each(dataReceived['annotations'], function(key, val) {
       var exist = false;
-      //exclude when inside html(img) tags
-      if (data.indexOf("%5Bimg") != -1) {
-        var pos1 = dataE.indexOf("%5Bimg");
-        var pos2 = dataE.indexOf("img%5D") + 6;
-        if (val['start'] >= pos1 && val['start'] <= pos2) {exist = true;}
-      }
       // verification that the entity or part of the entity is not already defined
       if (entities.length) {
         for (e = 0; e < entities.length; e++) {
@@ -725,24 +718,31 @@ var Annotate = {
 		var nsEnd="</div>";
 		
 		//DBpedia
-		var entities = mapDBpediaOutputToStandard(txt,
-				proxy_url, recEntities, recEntitiesLevels);
-		
+		if (mapDBpediaOutputToStandard(txt,	proxy_url, recEntities, recEntitiesLevels) != 0) {
+      var entities = mapDBpediaOutputToStandard(txt,
+        proxy_url, recEntities, recEntitiesLevels);
+    }
+
     
 		//EventRegistry
-		var entities = mapEventRegistryOutputToStandard(txt,
-				proxy_url, recEntities, recEntitiesLevels);
+		if (mapEventRegistryOutputToStandard(txt,	proxy_url, recEntities, recEntitiesLevels) != 0) {
+      var entities = mapEventRegistryOutputToStandard(txt,
+        proxy_url, recEntities, recEntitiesLevels);
+    }
 		
 			
 		//MeaningCloud
-		var entities = mapMeaningCloudOutputToStandard(txt,
-				proxy_url, recEntities, recEntitiesLevels);
+		if (mapMeaningCloudOutputToStandard(txt, proxy_url, recEntities, recEntitiesLevels) != 0) {
+      var entities = mapMeaningCloudOutputToStandard(txt,
+        proxy_url, recEntities, recEntitiesLevels);
+    }
 		
 		
 		//Dandelion
-		var entities = mapDandelionOutputToStandard(txt,
-				proxy_url, recEntities, recEntitiesLevels);
-		
+		if (mapDandelionOutputToStandard(txt, proxy_url, recEntities, recEntitiesLevels) != 0) {
+      var entities = mapDandelionOutputToStandard(txt,
+        proxy_url, recEntities, recEntitiesLevels);
+    }
 		// enrich the text
 		var enriched_text = enrichText(entities, editor);
 		// -------------------------------------------------
