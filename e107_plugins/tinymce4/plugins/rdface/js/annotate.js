@@ -41,8 +41,9 @@ function decodeHtml(html) {
   return txt.value;
 }
 function codeTag(str) {
-  var txtE = str.replace(/<br\s*[\/]?>/gi, "RetCha");
-  var txtR = txtE.replace("[html]", "");
+  var txtE = str.replace(/&nbsp;/g, " ");
+  var txtR = txtE.replace(/<br\s*[\/]?>/gi, "--RC--");
+  var txtR = txtR.replace("[html]", "");
   var txtR = txtR.replace("[/html]", "");
   var txtR = decodeHtml(txtR);
   //console.log(txtR);
@@ -80,7 +81,7 @@ function codeTag(str) {
   tabCodes.sort(clasPos);
   //console.log(tabCodes);
 
-  //Replace each tags characters, including < and >, by a space
+  //Replace each tags characters, including < and >, by a colon (:)
   var txtT = txtR.split("");
   for(var i=0; i<tabCodes.length; i++) {
     //specific cases for <figure></figure> or [img][/img] >>> replace all characters inside opening and closing tags to preserve the picture
@@ -88,7 +89,7 @@ function codeTag(str) {
       var cptI = tabCodes[i]["posI"];
       var cptF = tabCodes[i]["posF"];
       for(var j=cptI; j<cptF; j++) {
-        txtT[cptI] = "_";
+        txtT[cptI] = ":";
         cptI++;
       }
     }
@@ -96,7 +97,7 @@ function codeTag(str) {
       var cptI = tabCodes[i]["posI"];
       var cptF = tabCodes[i]["posF"];
       for(var j=cptI; j<cptF; j++) {
-        txtT[cptI] = "_";
+        txtT[cptI] = ":";
         cptI++;
       }
     }
@@ -104,13 +105,13 @@ function codeTag(str) {
     var lgCodeI = tabCodes[i]["codeI"].length;
     var cptI = tabCodes[i]["posI"];
     for(var j=1; j<=lgCodeI; j++) {
-      txtT[cptI] = "_";
+      txtT[cptI] = ":";
       cptI++;
     }
     var lgCodeF = tabCodes[i]["codeF"].length;
     var cptF = tabCodes[i]["posF"] - lgCodeF;
     for(var j=1; j<=lgCodeF; j++) {
-      txtT[cptF] = "_";
+      txtT[cptF] = ":";
       cptF++;
     }
   }
@@ -341,7 +342,7 @@ function mapMeaningCloudOutputToStandard(txt, proxy_url, recEntities,
 	var txtR = resTab["txtR"];
 	var dataEnc = encodeURIComponent(txtR);
 	//var dataEnc = encodeURIComponent($(txtE).text());
-	//console.log(data);
+	//console.log(dataEnc);
 	if (!$.cookie("confidence")) {
 		data = "api=MeaningCloud&confidence=0.50";
 	} else {
@@ -549,6 +550,7 @@ function enrichText(entities, editor) {
 	var enriched_text = resTab["txtR"];
 	//console.log(enriched_text);
 	var tabCodes = resTab["tabCodes"];
+	//console.log(tabCodes);
 	var extra_triples = '';
 	// prepare positioning functions
 	var sortArr = new Array();
@@ -577,6 +579,7 @@ function enrichText(entities, editor) {
 		});
 	});
 	entities = entitiesFinal;
+	//console.log(entities);
 	// replace the entities
 	$.each(entities, function(key, val) {
 		var selectedContent = val['label'];
@@ -634,7 +637,7 @@ function enrichText(entities, editor) {
 	//console.log(enriched_text);
   //console.log(tabCodes);		
 
-  var txtD = enriched_text.replace(/RetCha/g, "<br />");
+  var txtD = enriched_text.replace(/--RC--/g, "<br />");
 
   //Restore each tags codes
   var txtT = txtD.split("");
@@ -666,7 +669,7 @@ function enrichText(entities, editor) {
     var cptI = tabCodes[i]["posI"];
     var k = 0;
     for(var j=1; j<=lgCodeI; j++) {
-      txtT[cptI] = tabCodes[i]["codeI"].substr(k, 1);;
+      txtT[cptI] = tabCodes[i]["codeI"].substr(k, 1);
       cptI++;
       k++;
     }
@@ -675,7 +678,7 @@ function enrichText(entities, editor) {
     var cptF = tabCodes[i]["posF"] - lgCodeF;
     var k = 0;
     for(var j=1; j<=lgCodeF; j++) {
-      txtT[cptF] = tabCodes[i]["codeF"].substr(k, 1);;
+      txtT[cptF] = tabCodes[i]["codeF"].substr(k, 1);
       cptF++;
       k++;
     }    
@@ -725,6 +728,7 @@ var Annotate = {
 		var entities = mapDBpediaOutputToStandard(txt,
 				proxy_url, recEntities, recEntitiesLevels);
 		
+    
 		//EventRegistry
 		var entities = mapEventRegistryOutputToStandard(txt,
 				proxy_url, recEntities, recEntitiesLevels);
