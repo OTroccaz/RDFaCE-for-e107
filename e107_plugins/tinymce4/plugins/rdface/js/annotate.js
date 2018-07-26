@@ -52,7 +52,7 @@ function codeTag(str) {
   var txtR = txtR.replace(/\n|\r|(\n\r)/g,"");
   //Where are HTML tags?
   var aMem = ['<body', '<div', '<a', '<img', '[img', '<table', '<tr', '<td', '<th', '<tbody', '<thead', '<colgroup', '<b',
-              '<i', '<pre','<code', '<strong', '<u', '<em','<ul', '<ol', '<li', '<h1', '<h2', '<h3', '<h4', '<h5', '<h6', '<p',
+              '<i', '<pre','<code', '<strong', '<em','<ul', '<u>', '<ol', '<li', '<h1', '<h2', '<h3', '<h4', '<h5', '<h6', '<p',
               '<div', '<pre', '<section', '<article', '<blockquote', '<hgroup', '<aside', '<figure', '<figcaption', '<abbr', '<span', '<audio', '<video',
               '<small', '<big', '<caption', '<noscript', '<hr', '<section', '<iframe', '<sub', '<sup', '<cite', '<x-bbcode', '<meta'
               ];
@@ -68,6 +68,8 @@ function codeTag(str) {
       tabCode["codeI"] = txtR.substr(tabCode["posI"], posIF - tabCode["posI"]);
       var codeFtmp = aMem[i].trim().replace(aMem[i].substr(0, 1), aMem[i].trim().substr(0, 1)+'/');
       aMem[i].substr(0, 1) == "<" ? tabCode["codeF"] = codeFtmp + ">" : tabCode["codeF"] = codeFtmp + "]";
+      //specific case for <u>
+      aMem[i] == "<u>" ? tabCode["codeF"] = codeFtmp : '';
       var posFtmp = strpos(txtR, aMem[i].replace(aMem[i].substr(0, 1), aMem[i].substr(0, 1)+'/'), iCpt);
       tabCode["posF"] = posFtmp  + tabCode["codeF"].length; 
       tabCode["code"] = txtR.substr(tabCode["posI"], tabCode["posF"] - tabCode["posI"]);
@@ -408,97 +410,121 @@ function mapMeaningCloudOutputToStandard(txt, proxy_url, recEntities,
 	//console.log(entities);
 	return entities;
 }
-function mapDandelionOutputToStandard(txt, proxy_url, recEntities,
+function mapDandelionOutputToStandard(txt, proxy_url, recEntities,//With the basic (=free) plan, there's a limit of 1000 requests per day
 		recEntitiesLevels) {
+	var stillUnits = "ok";
 	var dataReceived;
 	var resTab = codeTag(txt);
 	var txtR = resTab["txtR"];
-	var dataEnc = encodeURIComponent(txtR);
-	//var dataEnc = encodeURIComponent($(txtE).text());
-	//console.log(data);
-	if (!$.cookie("confidence")) {
-		data = "api=Dandelion&confidence=0.50";
-	} else {
-		data = "api=Dandelion&confidence=" + $.cookie("confidence");
-	}
-	if (!$.cookie("language")) {
-		data += "&language=fr&query=" + dataEnc;
-	} else {
-		data += "&language=" + $.cookie("language") + "&query=" + dataEnc;
-	}
-	dataReceived = connectEnricherAPI(proxy_url, data);
-	//console.log(dataReceived);
-	// terminate if an error occured
-	if (!dataReceived)
-		return 0;
-  if (typeof dataReceived['annotations'] !== 'undefined') {
-    $.each(dataReceived['annotations'], function(key, val) {
-      var exist = false;
-      // verification that the entity or part of the entity is not already defined
-      if (entities.length) {
-        for (e = 0; e < entities.length; e++) {
-          var def = entities[e]['exact'];
-          var tst = val['spot'];
-          if ((def.indexOf(tst) != -1) || (tst.indexOf(def) != -1)) {exist = true; break;}
-        }
+	var txtC = resTab["tabCodes"];
+	//console.log(txtC);
+	//console.log(txtR);
+	var pLim = 0;
+	var txtL = 0;
+	for (iC = 0; iC < txtC.length; iC++) {
+    var pI = txtC[iC]["posI"];
+    var pF = txtC[iC]["posF"];
+    if (pI >= pLim) {
+      var txtS = txtR.substring(pI, pF);
+      //console.log(txtL);
+      //console.log(iC + ' - ' + pI + ' - ' + pF + ' - ' + txtS);
+      var dataEnc = encodeURIComponent(txtS);
+      //var dataEnc = encodeURIComponent(txtR);
+      //var dataEnc = encodeURIComponent($(txtE).text());
+      //console.log(data);
+      if (!$.cookie("confidence")) {
+        data = "api=Dandelion&confidence=0.50";
+      } else {
+        data = "api=Dandelion&confidence=" + $.cookie("confidence");
       }
-      if (!exist) {
-        var entity = new Array();
-        var properties = new Array();
-        // separate desired entities
-        var tmp = "";
-        var tabtmp = val['types'];
-        //schema
-        if (tabtmp != "") {
-          tabtmp.forEach(function(element) {
-            var tabelt = element.split("/");
-            var eltsch = tabelt[tabelt.length - 1];
-            tmp += "Schema:"+eltsch+',';
-          });
-          //console.log(tmp);
-          var detectedTypes = getPrefixTypeFromList('schema', tmp);
-          //console.log(detectedTypes);
-          if (detectedTypes.length) {
-            var tmp = 0;
-            // choose the most suitable type for the entity
-            $.each(detectedTypes, function(i, tp) {
-              if ((recEntities.indexOf(tp) != -1)
-                  && (recEntitiesLevels[recEntities.indexOf(tp)] > tmp)) {
-                entity["type"] = 'schema:' + tp;
-                entity["sch"] = "ok";
-                //console.log(entity["type"]);
-              }
-              tmp = recEntitiesLevels[recEntities.indexOf(tp)];
-            })
+      if (!$.cookie("language")) {
+        data += "&language=fr&query=" + dataEnc;
+      } else {
+        data += "&language=" + $.cookie("language") + "&query=" + dataEnc;
+      }
+      if (stillUnits == "ok") {dataReceived = connectEnricherAPI(proxy_url, data);}
+      //console.log(dataReceived);
+      
+      //Verification that there are still somme units otherwise there is a message "no units left" > if this is the case, no need to call connectEnricherAPI again
+      if (typeof dataReceived['message'] !== 'undefined' && dataReceived['message'] == "no units left") {
+        var stillUnits = "no more";
+        return 0;
+      }
+      // terminate if an error occured
+      if (!dataReceived)
+        return 0;
+      if (typeof dataReceived['annotations'] !== 'undefined') {
+        $.each(dataReceived['annotations'], function(key, val) {
+          var exist = false;
+          // verification that the entity or part of the entity is not already defined
+          if (entities.length) {
+            for (e = 0; e < entities.length; e++) {
+              var def = entities[e]['exact'];
+              var tst = val['spot'];
+              if ((def.indexOf(tst) != -1) || (tst.indexOf(def) != -1)) {exist = true; break;}
+            }
           }
-        }else{
-          var lod = val['lod'];
-          $.each(lod, function(i, tp) {
-            if (tp.indexOf("dbpedia") != -1) {//dbPedia > prioritaire
-              entity["type"] = 'schema:APIReference';
-              entity["uri"] = tp;
-              entity["dbp"] = "ok";
+          if (!exist) {
+            var entity = new Array();
+            var properties = new Array();
+            // separate desired entities
+            var tmp = "";
+            var tabtmp = val['types'];
+            //schema
+            if (tabtmp != "") {
+              tabtmp.forEach(function(element) {
+                var tabelt = element.split("/");
+                var eltsch = tabelt[tabelt.length - 1];
+                tmp += "Schema:"+eltsch+',';
+              });
+              //console.log(tmp);
+              var detectedTypes = getPrefixTypeFromList('schema', tmp);
+              //console.log(detectedTypes);
+              if (detectedTypes.length) {
+                var tmp = 0;
+                // choose the most suitable type for the entity
+                $.each(detectedTypes, function(i, tp) {
+                  if ((recEntities.indexOf(tp) != -1)
+                      && (recEntitiesLevels[recEntities.indexOf(tp)] > tmp)) {
+                    entity["type"] = 'schema:' + tp;
+                    entity["sch"] = "ok";
+                    //console.log(entity["type"]);
+                  }
+                  tmp = recEntitiesLevels[recEntities.indexOf(tp)];
+                })
+              }
+            }else{
+              var lod = val['lod'];
+              $.each(lod, function(i, tp) {
+                if (tp.indexOf("dbpedia") != -1) {//dbPedia > prioritaire
+                  entity["type"] = 'schema:APIReference';
+                  entity["uri"] = tp;
+                  entity["dbp"] = "ok";
+                }
+                if (tp.indexOf("wikipedia") != -1 && entity["dbp"] != "ok") {//wikipedia
+                  entity["type"] = 'schema:APIReference';
+                  entity["uri"] = tp;
+                }
+              });
             }
-            if (tp.indexOf("wikipedia") != -1 && entity["dbp"] != "ok") {//wikipedia
-              entity["type"] = 'schema:APIReference';
-              entity["uri"] = tp;
+            entity["label"] = val['label'];
+            entity["description"] = val['abstract'];
+            // add a property
+            entity["uri"] = val['uri'];
+            entity["start"] = val['start'] + txtL;
+            entity["end"] = val['end'] + txtL;
+            entity["exact"] = val['spot'];
+            if (entity["type"]) {
+              entities.push(entity);
             }
-          });
-        }
-        entity["label"] = val['label'];
-        entity["description"] = val['abstract'];
-        // add a property
-        entity["uri"] = val['uri'];
-        entity["start"] = val['start'];
-        entity["end"] = val['end'];
-        entity["exact"] = val['spot'];
-        if (entity["type"]) {
-          entities.push(entity);
-        }
+          }
+        });
       }
-    });
+      var txtL = txtL + txtS.length;
+      pLim = pF;
+    }
   }
-	//console.log(entities);
+	console.log(entities);
 	return entities;
 }
 //console.log(entities);
@@ -716,7 +742,7 @@ var Annotate = {
 		}
 		var nsStart = "<div id='namespaces' prefix='schema: http://schema.org/'>";
 		var nsEnd="</div>";
-		
+		/*
 		//DBpedia
 		if (mapDBpediaOutputToStandard(txt,	proxy_url, recEntities, recEntitiesLevels) != 0) {
       var entities = mapDBpediaOutputToStandard(txt,
@@ -737,12 +763,38 @@ var Annotate = {
         proxy_url, recEntities, recEntitiesLevels);
     }
 		
-		
+		*/
 		//Dandelion
-		if (mapDandelionOutputToStandard(txt, proxy_url, recEntities, recEntitiesLevels) != 0) {
+		/*
+		//if (encodeURI(txt).length > 3000) {//need to split the chain if the url is too long
+		if (txt.length > 2000) {//need to split the chain when the url is too long
+      var iDeb = 0;
+      var iFra = 2000;
+      while (iFra < txt.length) {
+        var txtS = txt.substring(iDeb, iFra);
+        console.log(txtS);      
+        
+        if (mapDandelionOutputToStandard(txtS, proxy_url, recEntities, recEntitiesLevels) != 0) {
+          var entities = mapDandelionOutputToStandard(txtS,
+            proxy_url, recEntities, recEntitiesLevels);
+        }
+        
+        iDeb = iFra;
+        iFra + 2000 > txt.length ? iFra = txt.length : iFra = iFra + 2000;
+      }
+    }else{
+      if (mapDandelionOutputToStandard(txt, proxy_url, recEntities, recEntitiesLevels) != 0) {
+        var entities = mapDandelionOutputToStandard(txt,
+          proxy_url, recEntities, recEntitiesLevels);
+      }
+    }
+    */
+    //if (mapDandelionOutputToStandard(txt, proxy_url, recEntities, recEntitiesLevels) != 0) {
       var entities = mapDandelionOutputToStandard(txt,
         proxy_url, recEntities, recEntitiesLevels);
-    }
+    //}
+    
+    
 		// enrich the text
 		var enriched_text = enrichText(entities, editor);
 		// -------------------------------------------------
