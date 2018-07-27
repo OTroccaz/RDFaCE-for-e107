@@ -43,7 +43,7 @@ function decodeHtml(html) {
 function codeTag(str) {
   var txtE = str.replace(/&nbsp;/g, " ");
   var txtR = txtE.replace(/<br\s*[\/]?>/gi, "--RC--");
-  var txtR = txtE.replace(/<hr\s*[\/]?>/gi, "--HR--");
+  var txtR = txtR.replace(/<hr\s*[\/]?>/gi, "--HR--");
   var txtR = txtR.replace("[html]", "");
   var txtR = txtR.replace("[/html]", "");
   var txtR = decodeHtml(txtR);
