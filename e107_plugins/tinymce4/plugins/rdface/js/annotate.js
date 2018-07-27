@@ -438,21 +438,26 @@ function mapDandelionOutputToStandard(txt, proxy_url, recEntities,//With the bas
 	//console.log(txtR);
 	var pLim = 0;
 	var txtS = "";
-	for (iC = 0; iC < txtC.length; iC++) {
-    var pI = txtC[iC]["posI"];
-    var pF = txtC[iC]["posF"];
-    if (pI >= pLim) {
-      var tstTxtS = txtS + txtR.substring(pI, pF);
-      if (tstTxtS.length < limChar) {
-        var txtS = tstTxtS;
-        //console.log(txtL);
-        //console.log(iC + ' - ' + pI + ' - ' + pF + ' - ' + txtS);
-      }else{
-        txtSTab.push(txtS);
-        var txtS = txtR.substring(pI, pF);
+	if (txtR.length <= limChar) {
+    txtSTab.push(txtR);
+  }else{
+    for (iC = 0; iC < txtC.length; iC++) {
+      var pI = txtC[iC]["posI"];
+      var pF = txtC[iC]["posF"];
+      if (pI >= pLim) {
+        var tstTxtS = txtS + txtR.substring(pI, pF);
+        if (tstTxtS.length < limChar) {
+          var txtS = tstTxtS;
+          //console.log(txtL);
+          //console.log(iC + ' - ' + pI + ' - ' + pF + ' - ' + txtS);
+        }else{
+          txtSTab.push(txtS);
+          var txtS = txtR.substring(pI, pF);
+        }
+        pLim = pF;
       }
-      pLim = pF;
     }
+    txtSTab.push(txtS);
   }
   //console.log(txtSTab);
   var txtL = 0;
