@@ -446,7 +446,7 @@ function mapDandelionOutputToStandard(txt, proxy_url, recEntities,//With the bas
       var pI = txtC[iC]["posI"];
       var pF = txtC[iC]["posF"];
       if (pI >= pLim) {
-        var tstTxtS = txtS + txtR.substring(pI, pF);
+        var tstTxtS = txtS + txtR.substring(pLim, pF);
         if (tstTxtS.length < limChar) {
           var txtS = tstTxtS;
           //console.log(txtL);
