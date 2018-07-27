@@ -55,7 +55,7 @@ function codeTag(str) {
   var aMem = ['<body', '<div', '<a', '<img', '[img', '<table', '<tr', '<td', '<th', '<tbody', '<thead', '<colgroup', '<b',
               '<i', '<pre','<code', '<strong', '<em','<ul', '<u>', '<ol', '<li', '<h1', '<h2', '<h3', '<h4', '<h5', '<h6', '<p',
               '<div', '<pre', '<section', '<article', '<blockquote', '<hgroup', '<aside', '<figure', '<figcaption', '<abbr', '<span', '<audio', '<video',
-              '<small', '<big', '<caption', '<noscript', '<hr', '<section', '<iframe', '<sub', '<sup', '<cite', '<x-bbcode', '<meta'
+              '<small', '<big', '<caption', '<noscript', '<section', '<iframe', '<sub', '<sup', '<cite', '<x-bbcode', '<meta'
               ];
   
   for(var i=0; i<aMem.length; i++) {
