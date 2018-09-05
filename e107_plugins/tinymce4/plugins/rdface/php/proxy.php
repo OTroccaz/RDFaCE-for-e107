@@ -5,7 +5,7 @@ if(!$api){die("You must specify an API name!");}
 $request_body = stripslashes($_POST['query']);
 $additionals=null;
 if($api == "DBpedia"){
-  $url = "http://api.dbpedia-spotlight.org/fr/annotate";
+  $url = "http://api.dbpedia-spotlight.org/en/annotate";
   $request = "text=".urlencode($request_body)."&confidence=".$_POST['confidence']."&support=20";
   $additionals = array(
     CURLOPT_HTTPHEADER => array("Content-Type:application/x-www-form-urlencoded", "Accept: application/json"),
