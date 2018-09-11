@@ -343,98 +343,127 @@ tinymce.PluginManager.add("rdface", function(a,b) {
 	        main_menu=[];
 			// show only related entities
 			var parent_node=jQuery(event.target);
-	         var has_rel=0;
-	         var all_datatypes=[];
-	         jQuery.each(data.types,function(i,v){
-	        	all_datatypes.push(v.id);
-			 })
-			 var menu_options=[];
-	          while(parent_node.length){
-	        	  if(parent_node.hasClass('r_entity')){
-	        		  has_rel=1;
-	        		  // get the type of entity
-	        		  var entity_type=getTypeOfEntity(parent_node,jQuery.cookie("annotationF"));
-	        		  jQuery.each(data.types[entity_type].properties,function(i,v){
-	        			  // only show atomic
-							// properties
-	        			  if(all_datatypes.indexOf(data.properties[v].ranges[0]) != -1){
-	        			  	  menu_options.push({text:data.properties[v].label,onclick: function(){insert_entity(a,data.properties[v].ranges[0],b,data.properties[v].id);}}) 
-	        			  }
-	        		  })
-	        		  break;
-	        	  }
-	        	  parent_node=parent_node.parent();
-	          }
-	         var del_node;
-	         // todo: enable deleting entities as well
-	          while(parent_node.length){
-	        	  del_node=parent_node;
-	        	  if(parent_node.hasClass('r_prop') || parent_node.hasClass('r_entity')){
-	        		  main_menu.push({text:'Delete', onclick: function(){
-							remove_annotation(del_node,jQuery.cookie("annotationF"));
-							a.setContent(jQuery(a.getBody()).html());
-						}})
-	        		  break;
-	        	  }
-	        	  parent_node=parent_node.parent();   
-	          }
-	        if(!has_rel){
+	    var has_rel=0;
+	    var all_datatypes=[];
+	    jQuery.each(data.types,function(i,v){
+        all_datatypes.push(v.id);
+			})
+			var menu_options=[];
+      while(parent_node.length){
+        if(parent_node.hasClass('r_entity')){
+          has_rel=1;
+          // get the type of entity
+          var entity_type=getTypeOfEntity(parent_node,jQuery.cookie("annotationF"));
+          jQuery.each(data.types[entity_type].properties,function(i,v){
+            // only show atomic
+        // properties
+            if(all_datatypes.indexOf(data.properties[v].ranges[0]) != -1){
+                menu_options.push({text:data.properties[v].label,onclick: function(){insert_entity(a,data.properties[v].ranges[0],b,data.properties[v].id);}}) 
+            }
+          })
+          break;
+        }
+        parent_node=parent_node.parent();
+      }
+      var del_node;
+      // todo: enable deleting entities as well
+      while(parent_node.length){
+        del_node=parent_node;
+        if(parent_node.hasClass('r_prop') || parent_node.hasClass('r_entity')){
+          main_menu.push({text:'Delete', onclick: function(){
+          remove_annotation(del_node,jQuery.cookie("annotationF"));
+          a.setContent(jQuery(a.getBody()).html());
+          }})
+          break;
+        }
+	      parent_node=parent_node.parent();   
+	    }
+	    if(!has_rel){
 				var others={};
 				jQuery.each(data.types,function(i,v){
 					if(v.level==1){
-						menu_options.push({text:v.label,onclick:function(){
+            menu_options.push({text:v.label,onclick:function(){
 							insert_entity(a,v.id,b,0);
 						}});
 					}else{
 						others[v.id]=v.label;
 					}
 				})
-				menu_options2=[];
+				menu_options2 = [];
 				jQuery.each(others,function(i,v){
 					 menu_options2.push({text:v,onclick:function(){
 						 insert_entity(a,i,b,0);
 					}});
 				});
 				menu_options.push({text:'More...',menu:menu_options2});
-	        }
-	          if(menu_options.length)
-	        	  main_menu.push({text:'Add as Entity', menu:menu_options})
-			// add related properties based on the
-			// selected schema
-	        parent_node=jQuery(event.target);
-	         menu_options=[];
-	          while(parent_node.length){
-	        	  if(parent_node.hasClass('r_entity')){
-	        		  // get the type of entity
-	        		  var entity_type=getTypeOfEntity(parent_node,jQuery.cookie("annotationF"));
-	        		  
-	        		  jQuery.each(data.types[entity_type].properties,function(i,v){
-	        			  // only show atomic
-							// properties
-	        			  if(all_datatypes.indexOf(data.properties[v].ranges[0]) == -1){
-	  						menu_options.push({text:data.properties[v].label,onclick:function(){
-	  							insert_property(a,data.properties[v].id,b);
-							}});
-	        			  }
-	        		  })
-	        		  main_menu.push({text:'Add as Property', menu:menu_options})
-	        		  break;
-	        	  }
-	        	  parent_node=parent_node.parent();
-	          }
-	          t=new tinymce.ui.Menu({items:main_menu,context:"contextmenu"}),t.renderTo(document.body)
-	          // fix positioning
-	          var r={x:event.pageX,y:event.pageY};
-	          //console.log(event.pageX+' - '+event.pageY);
-	          //console.log(tinymce.DOM.getPos(a.getContentAreaContainer()));
-	          //TODO integrate rdface actually based on tinymce3 to tinymce4
-	          if (event.pageY < 225) {
-              a.inline||(r=tinymce.DOM.getPos(a.getContentAreaContainer()),r.x+=event.clientX,r.y+=event.clientY+240),t.moveTo(r.x,r.y),a.on("remove",function(){t.remove(),t=null})
-            }else{
-              a.inline||(r=tinymce.DOM.getPos(a.getContentAreaContainer()),r.x+=event.clientX,r.y+=event.clientY-40),t.moveTo(r.x,r.y),a.on("remove",function(){t.remove(),t=null})
+	    }
+	    if(menu_options.length) {
+        main_menu.push({text:'Add as Entity', menu:menu_options})
+      }
+      // add related properties based on the selected schema
+      parent_node=jQuery(event.target);
+      menu_options = [];
+      while(parent_node.length){
+        if(parent_node.hasClass('r_entity')){
+          // get the type of entity
+          var entity_type=getTypeOfEntity(parent_node,jQuery.cookie("annotationF"));
+          
+          jQuery.each(data.types[entity_type].properties,function(i,v){
+            // only show atomic properties
+            if(all_datatypes.indexOf(data.properties[v].ranges[0]) == -1){
+              menu_options.push({text:data.properties[v].label,onclick:function(){
+                insert_property(a,data.properties[v].id,b);
+              }});
             }
+          })
+          main_menu.push({text:'Add as Property', menu:menu_options})
+          break;
+        }
+        parent_node=parent_node.parent();
+      }
+
+      // recreate a custom context menu, based on original: https://github.com/tinymce/tinymce/blob/master/js/tinymce/plugins/contextmenu/plugin.js
+      var editor = tinymce.activeEditor;
+      var contextmenu, doc = editor.getDoc();
+      contextmenu = editor.settings.contextmenu || 'link image inserttable | cell row column deletetable';
+      var menu, items = [];
+      tinymce.each(contextmenu.split(/[ ,]/), function(name) {
+        var item = editor.menuItems[name];
+
+        if (name == '|') {
+          item = {text: name};
+        }
+
+        if (item) {
+          item.shortcut = ''; // Hide shortcuts
+          items.push(item);
+        }
+      });
+      
+      for (var i = 0; i < items.length; i++) {
+          if (items[i].text == '|') {
+              if (i === 0 || i == items.length - 1) {
+                  items.splice(i, 1);
+              }
+          }
+      }
+
+      //separator
+      items.push({text:'|', shortcut: '', type: 'menuitem'})
+      
+      //RDFaCE items
+      for (var i = 0; i < main_menu.length; i++) {
+        if (main_menu[i]["text"] == "Delete") {
+          items.push({text:main_menu[i]["text"], onclick:main_menu[i]["onclick"]});
+        }else{
+          items.push({text:main_menu[i]["text"], menu:main_menu[i]["menu"]});
+        }
+      }
+     
+      menu = new tinymce.ui.Menu({items:items,context:"contextmenu"}),menu.renderTo(document.body);
+      var r={x:event.pageX,y:event.pageY};
+      a.inline||(r=tinymce.DOM.getPos(a.getContentAreaContainer()),r.x+=event.clientX,r.y+=event.clientY),menu.moveTo(r.x,r.y),a.on("remove",function(){menu.remove(),t=null})
 		});	
-				
 	});    
 });
 // some helper functions
